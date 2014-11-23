@@ -2,7 +2,47 @@
 
 # Python script for converting Skandiabanken CSV to YNAB import format
 
-file = '97225189467_2014_08_28-2014_09_27_1.csv' # could be input
+import sys, os
+from datetime import date
+
+files = os.listdir()
+csv = []
+
+for f in files:
+    if f.lower().endswith('.csv') and f.lower() != 'new_trans.csv' and f[0].isnumeric():
+        csv.append(f)
+
+default = len(csv)-1
+
+if default < 0:
+    print('Found no csv files, exiting…')
+    sys.exit(0)
+
+
+# Let user decide from files in execution dir
+
+print("Please select a file to process - default is last alphabetically")
+
+for i in range(len(csv)):
+    print("%1s %2s %25s" %
+            ("*" if i == default else "", (i+1), csv[i][-25:]))
+
+user_input = input('Select a file (leave empty for default): ')
+if user_input.startswith('q') or user_input.startswith('e'):
+    print('Quitting…')
+    sys.exit(0)
+elif user_input:
+    if not user_input.isnumeric():
+        print('I do not understand your input')
+        sys.exit(0)
+    if int(user_input)+1 > len(csv):
+        print('Could not find that item')
+        sys.exit(0)
+    transactions = csv[int(user_input)-1]
+else:
+    transactions = csv[default]
+
+print("Running conversion on %s" % transactions)
 
 known_payees = {
     'BANK NORWE': 'Bank Norwegian',
@@ -19,13 +59,11 @@ known_payees = {
 }
 
 new_lines = []
-with open(file, 'r', encoding='utf-8') as f:
+with open(transactions, 'r', encoding='utf-8') as f:
     # Data not needed
     f.readline()
     f.readline()
     f.readline()
-
-    # Loop this
 
     for line in f:
         transaction = line.strip()
@@ -61,7 +99,6 @@ with open(file, 'r', encoding='utf-8') as f:
             end = td[4].find("KURS:")
             li = td[4].split(' ')
             newli = []
-            #td[4] = td[4].split(' ')[4]
             for i in range(4, len(li)):
                 if li[i] == "KURS:":
                     break
@@ -95,14 +132,12 @@ with open(file, 'r', encoding='utf-8') as f:
         elif 'Omkostninger' in td[3]:
             td[4] = 'Skandiabanken'
 
-        #print(td[4][:10])
         if td[4][:10] != "":
             if td[4][:10] in known_payees:
                 td[4] = known_payees[td[4][:10]]
 
         # Format: date, payee, category, memo, outflow, inflow
         cleaned_data = "%s,%s,,%s,%s,%s" % (td[1], td[4], td[3], td[5], td[6])
-        print(cleaned_data)
         new_lines.append(cleaned_data)
 
     f.close()
@@ -113,4 +148,5 @@ with open(outfile, 'w') as of:
     for new_line in new_lines:
         of.write(new_line + '\n')
     f.close()
-print('done')
+#print('done')
+print('Converted %s transactions' % len(new_lines))
