@@ -9,7 +9,7 @@ files = os.listdir()
 csv = []
 
 for f in files:
-    if f.lower().endswith('.csv') and f.lower() != 'new_trans.csv' and f[0].isnumeric():
+    if f.lower().endswith('.csv') and f.lower() != 'new_trans.csv':
         csv.append(f)
 
 default = len(csv)-1
