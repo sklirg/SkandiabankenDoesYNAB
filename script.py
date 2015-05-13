@@ -4,6 +4,9 @@
 
 import sys, os
 from datetime import date
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 files = os.listdir()
 csv = []
@@ -28,6 +31,7 @@ for i in range(len(csv)):
             ("*" if i == default else "", (i+1), csv[i][-25:]))
 
 user_input = input('Select a file (leave empty for default): ')
+logging.debug('User input: "%s"' % user_input)
 if user_input.startswith('q') or user_input.startswith('e'):
     print('Quitting…')
     sys.exit(0)
@@ -61,14 +65,21 @@ known_payees = {
 new_lines = []
 with open(transactions, 'r', encoding='utf-8') as f:
     # Data not needed
+    logging.debug('Skipping first lines of file, as they contain useless information')
     f.readline()
     f.readline()
     f.readline()
 
+    logging.debug('Starting transaction processing')
     for line in f:
+        logging.debug('Processing line %s ...' % str(len(new_lines) + 1))
         transaction = line.strip()
         td = transaction.split(',')
+        if len(td) < 5:
+            logging.debug('Line has not got enough parameters, skipping...')
+            continue
 
+        logging.debug('Cleaning transaction data')
         # Cleaning data
         for i in range(len(td)):
             td[i] = td[i].strip('"')
@@ -136,6 +147,7 @@ with open(transactions, 'r', encoding='utf-8') as f:
             if td[4][:10] in known_payees:
                 td[4] = known_payees[td[4][:10]]
 
+        logging.debug('Done, appending to new converted transactions')
         # Format: date, payee, category, memo, outflow, inflow
         cleaned_data = "%s,%s,,%s,%s,%s" % (td[1], td[4], td[3], td[5], td[6])
         new_lines.append(cleaned_data)
